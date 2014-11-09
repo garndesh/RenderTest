@@ -1,11 +1,18 @@
 package garndesh.openglrenderer;
 
-import java.nio.FloatBuffer;
-import java.nio.ShortBuffer;
+import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
+import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
+import static org.lwjgl.opengl.GL11.GL_DEPTH_TEST;
+import static org.lwjgl.opengl.GL11.glClear;
+import static org.lwjgl.opengl.GL11.glEnable;
+import static org.lwjgl.opengl.GL11.glViewport;
+import static org.lwjgl.opengl.GL15.GL_ARRAY_BUFFER;
+import static org.lwjgl.opengl.GL15.glBindBuffer;
+import static org.lwjgl.opengl.GL15.glDeleteBuffers;
+import static org.lwjgl.opengl.GL30.glBindVertexArray;
+import static org.lwjgl.opengl.GL30.glDeleteVertexArrays;
 
-import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
-import org.lwjgl.LWJGLUtil;
 import org.lwjgl.Sys;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
@@ -15,11 +22,6 @@ import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.PixelFormat;
 import org.lwjgl.util.vector.Vector3f;
 
-import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL15.*;
-import static org.lwjgl.opengl.GL20.*;
-import static org.lwjgl.opengl.GL30.*;
-
 public class Game {
 	private static Game instance;
 	private ShaderProgram shader;
@@ -27,6 +29,8 @@ public class Game {
 	private Texture texture;
 	private Transform transform;
 	private Camera camera;
+	private CubeRenderer cubeRenderer;
+	private ModelBase modelRenderer;
 
 	/**
 	 * Create a new Game
@@ -63,6 +67,7 @@ public class Game {
 	public void init() {
 		transform = new Transform();
 
+		Mouse.setGrabbed(true);
 		camera = new Camera(67, ((float)Display.getWidth())/((float)Display.getHeight()), 0.1f, 100);
 		camera.setPosition(new Vector3f(0, 0, 0.8f));
 
@@ -72,67 +77,10 @@ public class Game {
 		shader.attachFragmentShader("garndesh/openglrenderer/fragment01.frag");
 		shader.link();
 
-		// Vertices for our cube
-		FloatBuffer vertices = BufferUtils.createFloatBuffer(24);
-		vertices.put(new float[] { -0.5f, +0.5f, +0.5f, // ID: 0
-				+0.5f, +0.5f, +0.5f, // ID: 1
-				-0.5f, -0.5f, +0.5f, // ID: 2
-				+0.5f, -0.5f, +0.5f, // ID: 3
-				+0.5f, +0.5f, -0.5f, // ID: 4
-				+0.5f, -0.5f, -0.5f, // ID: 5
-				-0.5f, +0.5f, -0.5f, // ID: 6
-				-0.5f, -0.5f, -0.5f // ID: 7
-		});
-		vertices.rewind();
-
-		// Colors for our cube
-		FloatBuffer colors = BufferUtils.createFloatBuffer(32);
-		colors.put(new float[] { 
-				1, 0, 0, 0,  	//1
-				0, 1, 0, 0,   	//2
-				0, 0, 1, 0, 	//3
-				1, 1, 1, 0, 	//4
-				1, 0, 0, 0, 	//5
-				0, 1, 0, 0, 	//6
-				0, 0, 1, 0, 	//6
-				1, 1, 1, 0 });	//8
-		colors.rewind();
-
-		// Elements for our cube
-		ShortBuffer elements = BufferUtils.createShortBuffer(36);
-		elements.put(new short[] { 
-				0, 1, 2, 2, 3, 1, // Front face
-				1, 4, 3, 3, 5, 4, // Right face
-				4, 6, 5, 5, 7, 6, // Back face
-				6, 0, 7, 7, 2, 0, // Left face
-				6, 4, 0, 0, 1, 4, // Top face
-				7, 5, 2, 2, 3, 5 // Bottom face
-		});
-		elements.rewind();
-
-		// Create a VAO
-		vaoID = glGenVertexArrays();
-		glBindVertexArray(vaoID);
-
-		// Create a VBO
-		vboID = glGenBuffers();
-		glBindBuffer(GL_ARRAY_BUFFER, vboID);
-		glBufferData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
-		glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-		// Create a VBO for the colors
-		vboTexID = glGenBuffers();
-		glBindBuffer(GL_ARRAY_BUFFER, vboTexID);
-		glBufferData(GL_ARRAY_BUFFER, colors, GL_STATIC_DRAW);
-		glVertexAttribPointer(1, 4, GL_FLOAT, false, 0, 0);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-		// Create a EBO for indexed drawing
-		eboID = glGenBuffers();
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, eboID);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements, GL_STATIC_DRAW);
-
+		cubeRenderer = new CubeRenderer();
+		System.out.println("Working Directory = " + System.getProperty("user.dir"));
+		modelRenderer = ModelBase.generateModelFromFile("src/main/resources/garndesh/openglrenderer/models/Test2.obj", "garndesh/openglrenderer/textures/test.png");
+		
 		// Unbind the VAO
 		glBindVertexArray(0);
 
@@ -182,17 +130,19 @@ public class Game {
 			Game.end();
 		
 		// Look up
-		//if (Keyboard.isKeyDown(Keyboard.KEY_UP))
-			camera.rotateX(Mouse.getDX());
+//		if (Keyboard.isKeyDown(Keyboard.KEY_UP))
+//			camera.rotateZ(1);
+			camera.rotateZ((float)0.5*Mouse.getDY());
 		// Look down
-		//if (Keyboard.isKeyDown(Keyboard.KEY_DOWN))
-			//camera.rotateX(-1);
+//		if (Keyboard.isKeyDown(Keyboard.KEY_DOWN))
+//			camera.rotateZ(-1);
 		// Turn left
-		//if (Keyboard.isKeyDown(Keyboard.KEY_LEFT))
-			camera.rotateY(Mouse.getDY());
+//		if (Keyboard.isKeyDown(Keyboard.KEY_LEFT))
+//			camera.rotateY(1);
+			camera.rotateY((float)-0.5*Mouse.getDX());
 		// Turn right
-		//if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT))
-			//camera.rotateY(-1);
+		if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT))
+			camera.rotateY(-1);
 		// Move front
 		if (Keyboard.isKeyDown(Keyboard.KEY_W))
 			camera.move(Camera.Direction.FORWARD, 0.05f);
@@ -206,10 +156,10 @@ public class Game {
 		if (Keyboard.isKeyDown(Keyboard.KEY_D))
 			camera.move(Camera.Direction.RIGHT, 0.05f);
 		// Move up
-		if (Keyboard.isKeyDown(Keyboard.KEY_Z))
+		if (Keyboard.isKeyDown(Keyboard.KEY_SPACE))
 			camera.move(Camera.Direction.UP, 0.05f);
 		// Move down
-		if (Keyboard.isKeyDown(Keyboard.KEY_X))
+		if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT))
 			camera.move(Camera.Direction.DOWN, 0.05f);
 		// Update the Camera
 		camera.update();
@@ -222,33 +172,22 @@ public class Game {
 		// Clear the screen and depth buffer
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		// Move the entire scene left by one
-		transform.translate(-1, 0, 0);
+		//transform.translate(-1, 0, 0);
 		// Draw an array of cubes
 		for (int x = 0; x < 2; x++) {
 			// Move the column of cubes
-			transform.translate(x, 0, 0);
+			//transform.translate(x, 0, 0);
 			for (int z = 0; z < 5; z++) {
 				// Add some depth for each row
-				transform.translate(0, 0, -2);
-				// Bind the shaders
-				shader.bind();
-				shader.setUniform("m_model", transform.getFloatBuffer());
-				shader.setUniform("m_view", camera.getViewBuffer());
-				shader.setUniform("m_proj", camera.getProjectionBuffer());
-				// Bind the VAO
-				glBindVertexArray(vaoID);
-				glEnableVertexAttribArray(0);
-				glEnableVertexAttribArray(1);
-				// Draw a cube
-				glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, 0);
-				// Unbind the VAO
-				glDisableVertexAttribArray(0);
-				glDisableVertexAttribArray(1);
-				glBindVertexArray(0);
-				// Unbind the shaders
-				ShaderProgram.unbind();
+				transform.translate(x*2-1, 0, -2*z);
+				
+				cubeRenderer.RenderCube(transform, shader, camera);
+				
+				transform.translate(0, 4, 0);
+				
+				modelRenderer.renderModel(transform, shader, camera);
+				transform.reset();
 			}
-			transform.reset();
 		}
 	}
 
@@ -356,16 +295,12 @@ public class Game {
 		// Dispose the shaders
 		shader.dispose();
 
-		// Dispose the VAO
-		glBindVertexArray(0);
-		glDeleteVertexArrays(vaoID);
-
-		// Dispose the VBO
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glDeleteBuffers(vboID);
+		cubeRenderer.dispose();
+		modelRenderer.dispose();
 	}
 
 	public static void end() {
+		Mouse.setGrabbed(false);
 		instance.dispose();
 		Display.destroy();
 		System.exit(0);

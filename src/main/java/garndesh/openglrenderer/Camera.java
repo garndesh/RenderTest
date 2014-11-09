@@ -7,6 +7,11 @@ import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
 
+
+/**
+ * @author christiaan
+ *
+ */
 public class Camera {
 	
 	public enum Direction {
@@ -18,9 +23,9 @@ public class Camera {
 		DOWN
 	}
 	
-	public static final Vector3f AXIS_X = new Vector3f(1, 0, 0);
+	public static final Vector3f AXIS_X = new Vector3f(0, 0, -1);
 	public static final Vector3f AXIS_Y = new Vector3f(0, 1, 0);
-	public static final Vector3f AXIS_Z = new Vector3f(0, 0, 1);
+	public static final Vector3f AXIS_Z = new Vector3f(1, 0, 0);
 	
 	private Vector3f   position;
 	private Quaternion orientation;
@@ -34,9 +39,9 @@ public class Camera {
 	private FloatBuffer viewBuffer;
 	
 	// Local axes (relative to the Camera)
-	private Vector3f up;
-	private Vector3f forward;
-	private Vector3f right;
+	private Vector3f up; 
+	private Vector3f forward; 
+	private Vector3f right; 
 	
 	
 	public Camera(float fov, float aspect, float zNear, float zFar)
@@ -47,8 +52,8 @@ public class Camera {
 
 	    // Create the default local axes
 	    up      = new Vector3f(AXIS_Y);
-	    forward = new Vector3f(AXIS_Z);
-	    right   = new Vector3f(AXIS_X);
+	    forward = new Vector3f(AXIS_X);
+	    right   = new Vector3f(AXIS_Z);
 
 	    // Create projection and view matrices
 	    projection = MatrixUtil.createPerspective(fov, aspect, zNear, zFar);
@@ -66,6 +71,7 @@ public class Camera {
 	public void rotateY(float angle){
 	    Quaternion yRot = QuaternionUtil.createFromAxisAngle(AXIS_Y, angle, null);
 	    Quaternion.mul(yRot, orientation, orientation);
+	    //orientation.setY(orientation.getY()+yRot.y);
 
 	    QuaternionUtil.rotate(right, yRot, right);
 	    QuaternionUtil.rotate(forward, yRot, forward);
@@ -75,25 +81,19 @@ public class Camera {
 	}
 	
 	public void rotateZ(float angle){
-	    Quaternion zRot = QuaternionUtil.createFromAxisAngle(AXIS_Z, angle, null);
+	    Quaternion zRot = QuaternionUtil.createFromAxisAngle(right, angle, null);
 	    Quaternion.mul(zRot, orientation, orientation);
+	    //orientation.setZ(orientation.getZ()+zRot.z);
 
 	    QuaternionUtil.rotate(up, zRot, up);
-	    QuaternionUtil.rotate(right, zRot, right);
-
-	    up.normalise();
-	    right.normalise();
-	}
-	
-	public void rotateX(float angle){
-	    Quaternion xRot = QuaternionUtil.createFromAxisAngle(AXIS_X, angle, null);
-	    Quaternion.mul(xRot, orientation, orientation);
-
-	    QuaternionUtil.rotate(up, xRot, up);
-	    QuaternionUtil.rotate(forward, xRot, forward);
+	    QuaternionUtil.rotate(forward, zRot, forward);
 
 	    up.normalise();
 	    forward.normalise();
+	}
+	
+	public void rotateX(float angle){
+	    
 	}
 	
 	public void move(Vector3f dir, float amount){
@@ -108,16 +108,23 @@ public class Camera {
 	    Vector3f.add(position, deltaMove, position);
 	}
 	
+	// raw move function will change given vector
+	private void moveRaw(Vector3f dir, float amount){
+		dir.normalise();
+		dir.scale(amount);
+		Vector3f.add(position, dir, position);
+	}
+	
 	public void move(Direction dir, float amount)
 	{
 	    switch (dir)
 	    {
-	        case FORWARD:  move(forward, +amount); break;
-	        case BACKWARD: move(forward, -amount); break;
-	        case LEFT:     move(right,   -amount); break;
-	        case RIGHT:    move(right,   +amount); break;
-	        case UP:       move(up,      +amount); break;
-	        case DOWN:     move(up,      -amount); break;
+	        case FORWARD:  moveRaw(new Vector3f(forward.x, 0, forward.z), +amount); break;
+	        case BACKWARD: moveRaw(new Vector3f(forward.x, 0, forward.z), -amount); break;
+	        case LEFT:     moveRaw(new Vector3f(right.x, 0, right.z),   -amount); break;
+	        case RIGHT:    moveRaw(new Vector3f(right.x, 0, right.z),   +amount); break;
+	        case UP:       move(AXIS_Y,      +amount); break;
+	        case DOWN:     move(AXIS_Y,      -amount); break;
 	    }
 	}
 	

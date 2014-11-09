@@ -8,3 +8,5 @@
 !LICENCE.txt
 !build.gradle
 !/src/
+!gradlew*
+!/gradle/
