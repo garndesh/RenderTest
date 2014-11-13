@@ -30,7 +30,7 @@ public class Game {
 	private Transform transform;
 	private Camera camera;
 	private CubeRenderer cubeRenderer;
-	private ModelBase modelRenderer;
+	private ModelBaseTest modelRenderer;
 
 	/**
 	 * Create a new Game
@@ -76,10 +76,14 @@ public class Game {
 		shader.attachVertexShader("garndesh/openglrenderer/vertex01.vert");
 		shader.attachFragmentShader("garndesh/openglrenderer/fragment01.frag");
 		shader.link();
+		
+
+		// Set the texture sampler
+		shader.setUniform("tex",new float[]{2});
 
 		cubeRenderer = new CubeRenderer();
 		System.out.println("Working Directory = " + System.getProperty("user.dir"));
-		modelRenderer = ModelBase.generateModelFromFile("src/main/resources/garndesh/openglrenderer/models/Test2.obj", "garndesh/openglrenderer/textures/test.png");
+		modelRenderer = ModelBaseTest.generateModelFromFile("src/main/resources/garndesh/openglrenderer/models/test.obj", "garndesh/openglrenderer/textures/test.png");
 		
 		// Unbind the VAO
 		glBindVertexArray(0);
@@ -141,8 +145,8 @@ public class Game {
 //			camera.rotateY(1);
 			camera.rotateY((float)-0.5*Mouse.getDX());
 		// Turn right
-		if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT))
-			camera.rotateY(-1);
+		//if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT))
+		//	camera.rotateY(-1);
 		// Move front
 		if (Keyboard.isKeyDown(Keyboard.KEY_W))
 			camera.move(Camera.Direction.FORWARD, 0.05f);
@@ -184,7 +188,7 @@ public class Game {
 				cubeRenderer.RenderCube(transform, shader, camera);
 				
 				transform.translate(0, 4, 0);
-				
+				transform.scale(0.5F, 0.5F, 0.5F);
 				modelRenderer.renderModel(transform, shader, camera);
 				transform.reset();
 			}

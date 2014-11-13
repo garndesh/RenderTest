@@ -34,7 +34,8 @@ public class CubeRenderer {
 	public CubeRenderer() {
 		// Vertices for our cube
 		FloatBuffer vertices = BufferUtils.createFloatBuffer(24);
-		vertices.put(new float[] { -0.5f, +0.5f, +0.5f, // ID: 0
+		vertices.put(new float[] { 
+				-0.5f, +0.5f, +0.5f, // ID: 0
 				+0.5f, +0.5f, +0.5f, // ID: 1
 				-0.5f, -0.5f, +0.5f, // ID: 2
 				+0.5f, -0.5f, +0.5f, // ID: 3
@@ -59,12 +60,19 @@ public class CubeRenderer {
 		
 		FloatBuffer textureCoords = BufferUtils.createFloatBuffer(12*6);
 		textureCoords.put(new float[] {
-				0.3333F, 0.6667F, 0.3333F, 1, 0, 0.6667F,
-				0.3333F, 1, 0, 1, 0, 0.6667F,
-				0.3333F, 0.3333F, 0.3333F, 0.6667F, 0, 0.3333F, 
-				0.3333F, 0.6667F, 0, 0.6667F, 0, 0.3333F, 
-				0.6667F, 0.3333F, 0.6667F, 0.6667F, 0.3333F, 0.3333F, 
+				0.667F, 0.667F, 1F, 0.667F, 0.667F, 1F, 1F, 1F, 
+				
+
+				0.3333F, 0.6667F, 0.3333F, 1.0000F,
+				
+				
+				0.3333F, 0.3333F, 
 				0.6667F, 0.6667F, 0.3333F, 0.6667F, 0.3333F, 0.3333F, 
+				
+				0.667F, 0.667F, 1F, 0.667F, 0.667F, 1F,
+				1F, 1F, 0.667F, 1F, 1F, 0.667F,
+				0.667F, 1F, 1F, 0.667F,
+				
 				0.3333F, 0, 0.3333F, 0.3333F, 0, 0, 
 				0.3333F, 0.3333F, 0, 0.3333F, 0, 0, 
 				0.6667F, 0, 0.6667F, 0.3333F, 0.3333F, 0,
@@ -76,7 +84,7 @@ public class CubeRenderer {
 
 		// Elements for our cube
 		ShortBuffer elements = BufferUtils.createShortBuffer(36);
-		elements.put(new short[] { 0, 1, 2, 2, 3, 1, // Front face
+		elements.put(new short[] { 0, 1, 2, 3, 2, 1, // Front face
 				1, 4, 3, 3, 5, 4, // Right face
 				4, 6, 5, 5, 7, 6, // Back face
 				6, 0, 7, 7, 2, 0, // Left face

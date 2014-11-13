@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL33;
 
 public class ModelBase {
 	private Texture texture;
@@ -164,9 +165,9 @@ public class ModelBase {
 			System.out.println(i[0]+"/"+i[1]);
 			elements.put(i[0]);
 			textureArray.put(tList.get(i[1]*2));
-			textureArray.put(tList.get(i[1]*2+1));
+			textureArray.put(1-tList.get(i[1]*2+1));
 			
-			System.out.println(i[0]+" ("+tList.get(i[1]*2)+","+tList.get(i[1]*2+1)+")");
+			System.out.println(i[0]+" ("+tList.get(i[1]*2)+","+(1-tList.get(i[1]*2+1))+")");
 			
 		}
 		textureArray.rewind();
@@ -197,8 +198,8 @@ public class ModelBase {
 			throw new ModelFileExeption(ModelFileExeption.INPUT_TO_SHORT);
 		if(length>4)
 			throw new ModelFileExeption(ModelFileExeption.INPUT_TO_LONG);
-		Short[] tmpValue = new Short[2];
 		for (int i = 0; i<3; i++){
+			Short[] tmpValue = new Short[2];
 			String[] values = parts[i+1].split("/");
 			tmpValue[0] = (short) (Short.parseShort(values[0])-1);
 			tmpValue[1] = (short) (Short.parseShort(values[1])-1);
@@ -207,6 +208,7 @@ public class ModelBase {
 		}
 		if(length == 4){
 			for(int i : new int[]{2, 3, 1}){
+				Short[] tmpValue = new Short[2];
 				String[] values = parts[i+1].split("/");
 				tmpValue[0] = (short) (Short.parseShort(values[0])-1);
 				tmpValue[1] = (short) (Short.parseShort(values[1])-1);

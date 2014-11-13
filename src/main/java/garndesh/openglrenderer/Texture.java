@@ -23,6 +23,7 @@ public class Texture {
 		this.width = width;
 		this.height = height;
 		this.id = id;
+		System.out.println(width+" "+height+" "+id);
 	}
 
 	/**
