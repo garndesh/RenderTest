@@ -12,6 +12,8 @@ import static org.lwjgl.opengl.GL15.glDeleteBuffers;
 import static org.lwjgl.opengl.GL30.glBindVertexArray;
 import static org.lwjgl.opengl.GL30.glDeleteVertexArrays;
 
+import java.util.HashMap;
+
 import org.lwjgl.LWJGLException;
 import org.lwjgl.Sys;
 import org.lwjgl.input.Keyboard;
@@ -31,6 +33,7 @@ public class Game {
 	private Camera camera;
 	private CubeRenderer cubeRenderer;
 	private ModelBaseTest modelRenderer;
+	private ModelBaseTest modelRenderer2;
 
 	/**
 	 * Create a new Game
@@ -83,8 +86,9 @@ public class Game {
 
 		cubeRenderer = new CubeRenderer();
 		System.out.println("Working Directory = " + System.getProperty("user.dir"));
-		modelRenderer = ModelBaseTest.generateModelFromFile("src/main/resources/garndesh/openglrenderer/models/test.obj", "garndesh/openglrenderer/textures/test.png");
-		
+		 HashMap<String, ModelBaseTest> models = ModelBaseTest.generateModelsFromFile("src/main/resources/garndesh/openglrenderer/models/aapje.obj", "garndesh/openglrenderer/textures/aapje.png");
+		 modelRenderer = models.get("JasperFinal");
+		// modelRenderer2 = models.get("CubeTop");
 		// Unbind the VAO
 		glBindVertexArray(0);
 
@@ -188,8 +192,11 @@ public class Game {
 				cubeRenderer.RenderCube(transform, shader, camera);
 				
 				transform.translate(0, 4, 0);
-				transform.scale(0.5F, 0.5F, 0.5F);
+				transform.scale(0.04F, 0.04F, 0.04F);
 				modelRenderer.renderModel(transform, shader, camera);
+				
+				//transform.rotate(0, 45, 0);
+				//modelRenderer2.renderModel(transform, shader, camera);
 				transform.reset();
 			}
 		}

@@ -13,8 +13,10 @@ import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map.Entry;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL15;
@@ -22,7 +24,7 @@ import org.lwjgl.opengl.GL15;
 public class ModelBaseTest {
 
 	private Texture texture;
-	private int vaoID, vboID, tboID, nboID, eboID;
+	private int vaoID, vboID, eboID;
 	boolean textured, normals;
 	private int elementCount;
 
@@ -44,27 +46,15 @@ public class ModelBaseTest {
 		vboID = glGenBuffers();
 		glBindBuffer(GL_ARRAY_BUFFER, vboID);
 		glBufferData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
-		//glVertexPointer(size, stride, pointer);
 		glVertexAttribPointer(0, 3, GL_FLOAT, false, vLength * Float.BYTES, 0);
-		//glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 		if (tex) {
-			// Create a VBO
-			//tboID = glGenBuffers();
-			//glBindBuffer(GL_ARRAY_BUFFER, tboID);
-			//glBufferData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
 			glVertexAttribPointer(1, 2, GL_FLOAT, false, vLength * Float.BYTES,
 					3 * Float.BYTES);
-			//glBindBuffer(GL_ARRAY_BUFFER, 1);
 		}
 		if (norm) {
-			// Create a VBO
-			//nboID = glGenBuffers();
-			//glBindBuffer(GL_ARRAY_BUFFER, nboID);
-			//glBufferData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
 			glVertexAttribPointer(2, 3, GL_FLOAT, false, vLength * Float.BYTES,
 					((tex ? 2 : 0) + 3) * Float.BYTES);
-			//glBindBuffer(GL_ARRAY_BUFFER, 3);
 
 		}
 		
@@ -130,25 +120,23 @@ public class ModelBaseTest {
 		glDeleteBuffers(vboID);
 	}
 
-	public static ModelBaseTest generateModelFromFile(String fileName,
+	public static HashMap<String, ModelBaseTest> generateModelsFromFile(String fileName,
 			String textureName) {
-		FloatBuffer vertices;
-		ShortBuffer elements;
 		boolean textured = false;
 		boolean normals = false;
+
+		HashMap<String, ModelArrays> modelObjects = new HashMap<String, ModelArrays>();
+		int lineNumber = 0;
+		
 
 		List<Float> vList = new ArrayList<Float>();
 		List<Float> tList = new ArrayList<Float>();
 		List<Float> nList = new ArrayList<Float>();
-		List<String> eList = new ArrayList<String>();
-		int lineNumber = 0;
-
-		List<String> map = new ArrayList<String>();
 
 		try {
-			BufferedReader inputStream = new BufferedReader(new FileReader(
-					fileName));
+			BufferedReader inputStream = new BufferedReader(new FileReader(fileName));
 			String line;
+			String currentModel = "";
 			String[] parts;
 
 			while (inputStream != null
@@ -156,19 +144,36 @@ public class ModelBaseTest {
 				lineNumber++;
 				parts = line.split(" ");
 				switch (parts[0]) {
+				case "o":
+					modelObjects.put(parts[1], new ModelArrays());
+					currentModel = parts[1];
+					break;
 				case "v":
+					if(currentModel == "")
+						break;
 					readFloats(parts, vList, 3);
 					break;
 				case "vt":
+					if(currentModel == "")
+						break;
 					readFloats(parts, tList, 2);
 					break;
 				case "vn":
+					if(currentModel == "")
+						break;
 					readFloats(parts, nList, 3);
 					break;
 				case "f":
+					if(currentModel == "")
+						break;
 					// readShorts(parts, eList);
-					for (int i = 1; i < parts.length; i++) {
-						eList.add(parts[i]);
+					for (int i = 1; i < 4; i++) {
+						modelObjects.get(currentModel).eList.add(parts[i]);
+					} 
+					if(parts.length==5){
+						for (int i : new int[]{1, 3, 4}){
+							modelObjects.get(currentModel).eList.add(parts[i]);
+						}
 					}
 					break;
 				default:
@@ -189,58 +194,75 @@ public class ModelBaseTest {
 			e.printStackTrace();
 		}
 
-		System.out.println(eList.size());
-		map = new ArrayList<String>(new LinkedHashSet<String>(eList));
-		System.out.println(map.size());
-
-		String[] tmp = map.get(0).split("/");
-		//System.out.println("tex try = "+map.get(0));
-		if (tmp.length > 1 && tmp[1] != "") {
-			textured = true;
-		}
-		if (tmp.length > 2 && tmp[2] != "") {
-			normals = true;
-		}
-
-		vertices = BufferUtils.createFloatBuffer(map.size()
-				* (3 + (textured ? 2 : 0) + (normals ? 3 : 0)));
-		for (String i : map) {
-			String[] indecies = i.split("/");
-			short vertex = (short) (Short.valueOf(indecies[0]) - 1);
-			System.out.println(i + " " + indecies.length);
-			vertices.put(vList.get(vertex * 3));
-			vertices.put(vList.get(vertex * 3 + 1));
-			vertices.put(vList.get(vertex * 3 + 2));
-			if (textured) {
-				short texture = (short) (Short.valueOf(indecies[1]) - 1);
-				//System.out.println("Getting texture coords: " + texture);
-				vertices.put(tList.get(texture * 2));
-				vertices.put(1-tList.get(texture * 2 + 1));
+		HashMap<String, ModelBaseTest> models = new HashMap<String, ModelBaseTest>();
+		Iterator<Entry<String, ModelArrays>> iter =  modelObjects.entrySet().iterator();
+		FloatBuffer vertices;
+		ShortBuffer elements;
+		while (iter.hasNext()){
+			System.out.println("Starting with new Object");
+			
+			textured = false;
+			normals = false;
+			Entry<String, ModelArrays> entry  = (Entry<String, ModelArrays>) iter.next();
+			ModelArrays array = entry.getValue();
+			System.out.println(array.eList.size());
+			System.out.println(vList.size());
+	
+			List<String> map = new ArrayList<String>(new LinkedHashSet<String>(array.eList));
+			System.out.println(map.size());
+	
+			String[] tmp = map.get(0).split("/");
+			//System.out.println("tex try = "+map.get(0));
+			if (tmp.length > 1 && tmp[1] != "") {
+				textured = true;
 			}
-			if (normals) {
-				short normal = (short) (Short.valueOf(indecies[2]) - 1);
-				vertices.put(tList.get(normal * 3));
-				vertices.put(tList.get(normal * 3 + 1));
-				vertices.put(tList.get(normal * 3 + 2));
+			if (tmp.length > 2 && tmp[2] != "") {
+				normals = true;
 			}
+
+			vertices = BufferUtils.createFloatBuffer(map.size()
+					* (3 + (textured ? 2 : 0) + (normals ? 3 : 0)));
+			for (String i : map) {
+				String[] indecies = i.split("/");
+				short vertex = (short) (Short.valueOf(indecies[0]) - 1);
+				System.out.println(i + " " + indecies.length);
+				vertices.put(vList.get(vertex * 3));
+				vertices.put(vList.get(vertex * 3 + 1));
+				vertices.put(vList.get(vertex * 3 + 2));
+				if (textured) {
+					short texture = (short) (Short.valueOf(indecies[1]) - 1);
+					//System.out.println("Getting texture coords: " + texture);
+					vertices.put(tList.get(texture * 2));
+					vertices.put(1-tList.get(texture * 2 + 1));
+				}
+				if (normals) {
+					short normal = (short) (Short.valueOf(indecies[2]) - 1);
+					vertices.put(tList.get(normal * 3));
+					vertices.put(tList.get(normal * 3 + 1));
+					vertices.put(tList.get(normal * 3 + 2));
+				}
+			}
+			vertices.rewind();
+	
+			elements = BufferUtils.createShortBuffer(array.eList.size());
+			System.out.println("Element Buffer");
+			for (String i : array.eList) {
+				// System.out.println(i);
+				short index = (short) map.indexOf(i);
+				elements.put(index);
+				System.out.println(i + " "+map.indexOf(i)+"( "+vertices.get(index*(3+(textured?2:0)+(normals?3:0)))+","+vertices.get(index*(3+(textured?2:0)+(normals?3:0))+1)+","+vertices.get(index*(3+(textured?2:0)+(normals?3:0))+2)+" ) ,"+vertices.get(index*(3+(textured?2:0)+(normals?3:0))+3)+","+vertices.get(index*(3+(textured?2:0)+(normals?3:0))+4));
+				// System.out.println(i[0]+" ("+tList.get(i[1]*2)+","+(1-tList.get(i[1]*2+1))+")");
+	
+			}
+			elements.rewind();
+			
+			models.put(entry.getKey(), new ModelBaseTest(vertices.duplicate(), elements.duplicate(), textured, normals,
+					Texture.loadTexture(textureName)));
+			vertices.clear();
+			elements.clear();
 		}
-		vertices.rewind();
-
-		elements = BufferUtils.createShortBuffer(eList.size());
-		System.out.println("Element Buffer");
-		for (String i : eList) {
-			// System.out.println(i);
-			short index = (short) map.indexOf(i);
-			elements.put(index);
-			System.out.println(i + " "+map.indexOf(i)+"( "+vertices.get(index*(3+(textured?2:0)+(normals?3:0)))+","+vertices.get(index*(3+(textured?2:0)+(normals?3:0))+1)+","+vertices.get(index*(3+(textured?2:0)+(normals?3:0))+2)+" ) ,"+vertices.get(index*(3+(textured?2:0)+(normals?3:0))+3)+","+vertices.get(index*(3+(textured?2:0)+(normals?3:0))+4));
-			// System.out.println(i[0]+" ("+tList.get(i[1]*2)+","+(1-tList.get(i[1]*2+1))+")");
-
-		}
-		elements.rewind();
-
 		// return null;
-		return new ModelBaseTest(vertices, elements, textured, normals,
-				Texture.loadTexture(textureName));
+		return models;
 	}
 
 	private static void readFloats(String[] parts, List<Float> fList,
