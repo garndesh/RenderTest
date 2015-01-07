@@ -83,6 +83,8 @@ public class MatrixUtil {
 		Matrix4f m = new Matrix4f();
 		FloatBuffer fb = FloatBuffer.allocate(16);
 		fb.put(perspectiveProjection.M);
+		fb.rewind();
+		Log.d("tmp", "fb.position: "+fb.position()+" fb.capacity: "+fb.capacity());
 		m.load(fb);
 		return (Matrix4f) m.transpose();
 	}

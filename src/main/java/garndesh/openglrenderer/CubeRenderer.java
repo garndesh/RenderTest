@@ -125,7 +125,7 @@ public class CubeRenderer {
 	}
 
 	public void RenderCube(Transform location, ShaderProgram shader,
-			Camera camera) {
+			ACamera camera) {
 
 		// Bind the shaders
 		shader.bind();

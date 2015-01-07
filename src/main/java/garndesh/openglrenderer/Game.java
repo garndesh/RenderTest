@@ -30,12 +30,14 @@ public class Game implements RenderScene {
 	private int vaoID, vboID, vboTexID, eboID;
 	private Texture texture;
 	private Transform transform;
-	private Camera camera;
+	private ACamera camera;
 	private CubeRenderer cubeRenderer;
 	private ModelBaseTest modelRenderer;
 	private ModelBaseTest modelRenderer2;
 	private boolean locked = false;
 	private int timer = 0;
+	
+	private static final boolean OCULUS_ENABLED = true;
 
 	/**
 	 * Create a new Game
@@ -54,9 +56,15 @@ public class Game implements RenderScene {
 
 			// Create the Display
 			Display.create(pfmt, cattr);
-			Display.setResizable(true);
-			setDisplayMode(800, 600, false);
-
+			
+			if(OCULUS_ENABLED){
+				Display.setResizable(false);
+				//Display.setLocation(1920, 0);
+				setDisplayMode(1920/2, 1080/2, false);
+			} else {
+				Display.setResizable(true);
+				setDisplayMode(800, 600, false);
+			}
 			// Start the game
 			gameLoop();
 		} catch (LWJGLException e) {
@@ -74,7 +82,12 @@ public class Game implements RenderScene {
 
 		Mouse.setGrabbed(true);
 		locked = true;
-		camera = new Camera(67, ((float)Display.getWidth())/((float)Display.getHeight()), 0.1f, 100);
+		if(OCULUS_ENABLED){
+			camera = new HmdCamera(0.1f, 100);
+		} else {
+			camera = new Camera(67, ((float) Display.getWidth())
+				/ ((float) Display.getHeight()), 0.1f, 100);
+		}
 		camera.setPosition(new Vector3f(0, 0, 0.8f));
 
 		// Create a new ShaderProgram
@@ -82,15 +95,18 @@ public class Game implements RenderScene {
 		shader.attachVertexShader("garndesh/openglrenderer/vertex01.vert");
 		shader.attachFragmentShader("garndesh/openglrenderer/fragment01.frag");
 		shader.link();
-		
 
 		// Set the texture sampler
-		shader.setUniform("tex",new float[]{2});
+		shader.setUniform("tex", new float[] { 2 });
 
 		cubeRenderer = new CubeRenderer();
-		System.out.println("Working Directory = " + System.getProperty("user.dir"));
-		 HashMap<String, ModelBaseTest> models = ModelBaseTest.generateModelsFromFile("src/main/resources/garndesh/openglrenderer/models/aapje.obj", "garndesh/openglrenderer/textures/aapje.png");
-		 modelRenderer = models.get("JasperFinal");
+		System.out.println("Working Directory = "
+				+ System.getProperty("user.dir"));
+		HashMap<String, ModelBaseTest> models = ModelBaseTest
+				.generateModelsFromFile(
+						"src/main/resources/garndesh/openglrenderer/models/aapje.obj",
+						"garndesh/openglrenderer/textures/aapje.png");
+		modelRenderer = models.get("JasperFinal");
 		// modelRenderer2 = models.get("CubeTop");
 		// Unbind the VAO
 		glBindVertexArray(0);
@@ -136,33 +152,34 @@ public class Game implements RenderScene {
 	 * Update the game
 	 */
 	public void update(long elapsedTime) {
-		//transform.rotate(1, 1, 1);
+		// transform.rotate(1, 1, 1);
 		if (timer > 0)
 			timer -= elapsedTime;
 		if (Keyboard.isKeyDown(Keyboard.KEY_ESCAPE))
 			Game.end();
-		if(Keyboard.isKeyDown(Keyboard.KEY_E) && timer <= 0){
+		if (Keyboard.isKeyDown(Keyboard.KEY_E) && timer <= 0) {
 			locked = !locked;
 			timer = 100;
 			Mouse.setGrabbed(locked);
-			Mouse.setCursorPosition(Display.getWidth()/2, Display.getHeight()/2);
+			Mouse.setCursorPosition(Display.getWidth() / 2,
+					Display.getHeight() / 2);
 		}
 		// Look up
-//		if (Keyboard.isKeyDown(Keyboard.KEY_UP))
-//			camera.rotateZ(1);
-		if(locked)
-			camera.rotateZ((float)0.5*Mouse.getDY());
+		// if (Keyboard.isKeyDown(Keyboard.KEY_UP))
+		// camera.rotateZ(1);
+		if (locked)
+			camera.rotateZ((float) 0.5 * Mouse.getDY());
 		// Look down
-//		if (Keyboard.isKeyDown(Keyboard.KEY_DOWN))
-//			camera.rotateZ(-1);
+		// if (Keyboard.isKeyDown(Keyboard.KEY_DOWN))
+		// camera.rotateZ(-1);
 		// Turn left
-//		if (Keyboard.isKeyDown(Keyboard.KEY_LEFT))
-//			camera.rotateY(1);
-		if(locked)
-			camera.rotateY((float)-0.5*Mouse.getDX());
+		// if (Keyboard.isKeyDown(Keyboard.KEY_LEFT))
+		// camera.rotateY(1);
+		if (locked)
+			camera.rotateY((float) -0.5 * Mouse.getDX());
 		// Turn right
-		//if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT))
-		//	camera.rotateY(-1);
+		// if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT))
+		// camera.rotateY(-1);
 		// Move front
 		if (Keyboard.isKeyDown(Keyboard.KEY_W))
 			camera.move(Camera.Direction.FORWARD, 0.05f);
@@ -182,7 +199,6 @@ public class Game implements RenderScene {
 		if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT))
 			camera.move(Camera.Direction.DOWN, 0.05f);
 		// Update the Camera
-		camera.update();
 	}
 
 	/**
@@ -190,29 +206,34 @@ public class Game implements RenderScene {
 	 */
 	@Override
 	public void render() {
-		// Clear the screen and depth buffer
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		// Move the entire scene left by one
-		//transform.translate(-1, 0, 0);
-		// Draw an array of cubes
-		for (int x = -3; x < 4; x++) {
-			// Move the column of cubes
-			//transform.translate(x, 0, 0);
-			for (int z = 0; z < 5; z++) {
-				// Add some depth for each row
-				transform.translate(x*10-5, 0, -10*z);
-				
-				cubeRenderer.RenderCube(transform, shader, camera);
-				
-				transform.translate(0, 1, 0);
-				transform.scale(0.19F, 0.19F, 0.19F);
-				modelRenderer.renderModel(transform, shader, camera);
-				
-				//transform.rotate(0, 45, 0);
-				//modelRenderer2.renderModel(transform, shader, camera);
-				transform.reset();
+		camera.preUpdate();
+		for (int eye = 0; eye < camera.eyes; eye++) {
+			camera.update(eye);
+			// Clear the screen and depth buffer
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			// Move the entire scene left by one
+			// transform.translate(-1, 0, 0);
+			// Draw an array of cubes
+			for (int x = -3; x < 4; x++) {
+				// Move the column of cubes
+				// transform.translate(x, 0, 0);
+				for (int z = 0; z < 5; z++) {
+					// Add some depth for each row
+					transform.translate(x * 10 - 5, 0, -10 * z);
+
+					cubeRenderer.RenderCube(transform, shader, camera);
+
+					transform.translate(0, 1, 0);
+					transform.scale(0.19F, 0.19F, 0.19F);
+					modelRenderer.renderModel(transform, shader, camera);
+
+					// transform.rotate(0, 45, 0);
+					// modelRenderer2.renderModel(transform, shader, camera);
+					transform.reset();
+				}
 			}
 		}
+		camera.postUpdate();
 	}
 
 	/**
@@ -220,9 +241,10 @@ public class Game implements RenderScene {
 	 */
 	public void resized() {
 		glViewport(0, 0, Display.getWidth(), Display.getHeight());
-		if(camera!=null){
+		if (camera != null) {
 			Vector3f pos = camera.getPosition();
-			camera = new Camera(67, ((float)Display.getWidth())/((float)Display.getHeight()), 0.1f, 100);
+			camera = new Camera(67, ((float) Display.getWidth())
+					/ ((float) Display.getHeight()), 0.1f, 100);
 			camera.setPosition(pos);
 		}
 	}

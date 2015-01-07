@@ -78,7 +78,7 @@ public class ModelBaseTest {
 	}
 
 	public void renderModel(Transform location, ShaderProgram shader,
-			Camera camera) {
+			ACamera camera) {
 		// Bind the shaders
 		// System.out.println("binding shaders");
 		shader.bind();
@@ -278,9 +278,9 @@ public class ModelBaseTest {
 				throw new ModelFileExeption(
 						ModelFileExeption.INPUT_CANNOT_PARSE);
 			fList.add(tmpValue);
-			System.out.print(tmpValue + " ");
+			//System.out.print(tmpValue + " ");
 		}
-		System.out.println();
+		//System.out.println();
 	}
 
 }

@@ -9,17 +9,27 @@ import org.lwjgl.util.vector.Vector3f;
 
 public abstract class ACamera {
 
+	protected byte eyes;
 
 	protected Vector3f   position;
 	protected Quaternion orientation;
 	
 	// The projection and view matrices
-	protected Matrix4f projection;
+	protected Matrix4f[] projection;
 	protected Matrix4f view;
 
 	// Projection and View matrix buffers
 	protected FloatBuffer projBuffer;
 	protected FloatBuffer viewBuffer;
+	
+	protected static final Vector3f AXIS_X = new Vector3f(0, 0, -1);
+	protected static final Vector3f AXIS_Y = new Vector3f(0, 1, 0);
+	protected static final Vector3f AXIS_Z = new Vector3f(1, 0, 0);
+	
+	// Local axes (relative to the Camera)
+	protected Vector3f up; 
+	protected Vector3f forward; 
+	protected Vector3f right; 
 	
 	public enum Direction {
 		FORWARD,
@@ -36,27 +46,48 @@ public abstract class ACamera {
 	    position    = new Vector3f();
 	    orientation = new Quaternion();
 	    
-	 // Create projection and view matrices
-	    projection = new Matrix4f();
-	    view       = new Matrix4f();
-
+		view       = new Matrix4f();
 	    // Create the projection and view matrix buffers
-	    projBuffer = BufferUtils.createFloatBuffer(16);
 	    viewBuffer = BufferUtils.createFloatBuffer(16);
-
+	    // Create the default local axes
+	    up      = new Vector3f(AXIS_Y);
+	    forward = new Vector3f(AXIS_X);
+	    right   = new Vector3f(AXIS_Z);
 	}
 	
-	public abstract void rotateY(float angle);
+	public void rotateY(float angle){
+	    Quaternion yRot = QuaternionUtil.createFromAxisAngle(AXIS_Y, angle, null);
+	    Quaternion.mul(yRot, orientation, orientation);
+	    //orientation.setY(orientation.getY()+yRot.y);
+
+	    QuaternionUtil.rotate(right, yRot, right);
+	    QuaternionUtil.rotate(forward, yRot, forward);
+
+	    right.normalise();
+	    forward.normalise();
+	}
 	
-	public abstract void rotateZ(float angle);
+	public void rotateZ(float angle){
+	    Quaternion zRot = QuaternionUtil.createFromAxisAngle(right, angle, null);
+	    Quaternion.mul(zRot, orientation, orientation);
+	    //orientation.setZ(orientation.getZ()+zRot.z);
+
+	    QuaternionUtil.rotate(up, zRot, up);
+	    QuaternionUtil.rotate(forward, zRot, forward);
+
+	    up.normalise();
+	    forward.normalise();
+	}
 	
-	public abstract void rotateX(float angle);
+	public void rotateX(float angle){
+	    
+	}
 	
 	public abstract void move(Vector3f dir, float amount);
 	
 	public abstract void move(Direction dir, float amount);
 	
-	public abstract void update();
+	public abstract void update(int eye);
 
 	public void setPosition(Vector3f position) {
 		// TODO Auto-generated method stub
@@ -75,4 +106,12 @@ public abstract class ACamera {
 	public Vector3f getPosition(){
 		return this.position;
 	}
+	
+	public byte getEyes(){
+		return eyes;
+	}
+
+	public abstract void preUpdate();
+
+	public abstract void postUpdate();
 }

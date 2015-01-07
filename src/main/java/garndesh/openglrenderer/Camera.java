@@ -12,60 +12,25 @@ import org.lwjgl.util.vector.Vector3f;
  * @author christiaan
  *
  */
-public class Camera extends ACamera{
-	
-	public static final Vector3f AXIS_X = new Vector3f(0, 0, -1);
-	public static final Vector3f AXIS_Y = new Vector3f(0, 1, 0);
-	public static final Vector3f AXIS_Z = new Vector3f(1, 0, 0);
-	
-	// Local axes (relative to the Camera)
-	private Vector3f up; 
-	private Vector3f forward; 
-	private Vector3f right; 
-	
+public class Camera extends ACamera{	
 	
 	public Camera(float fov, float aspect, float zNear, float zFar)
 	{
 		super();
-	    // Create the default local axes
-	    up      = new Vector3f(AXIS_Y);
-	    forward = new Vector3f(AXIS_X);
-	    right   = new Vector3f(AXIS_Z);
+		eyes = 1;
+	    
+	 // Create projection and view matrices
+	    projection = new Matrix4f[1];
+
+	    projBuffer = BufferUtils.createFloatBuffer(16);
+
 
 	    // Create projection matrice
-	    projection = MatrixUtil.createPerspective(fov, aspect, zNear, zFar);
+	    projection[0] = MatrixUtil.createPerspective(fov, aspect, zNear, zFar);
 
 	    // Store the projection matrix in buffer
-	    projection.store(projBuffer);
+	    projection[0].store(projBuffer);
 	    projBuffer.rewind();
-	}
-	
-	public void rotateY(float angle){
-	    Quaternion yRot = QuaternionUtil.createFromAxisAngle(AXIS_Y, angle, null);
-	    Quaternion.mul(yRot, orientation, orientation);
-	    //orientation.setY(orientation.getY()+yRot.y);
-
-	    QuaternionUtil.rotate(right, yRot, right);
-	    QuaternionUtil.rotate(forward, yRot, forward);
-
-	    right.normalise();
-	    forward.normalise();
-	}
-	
-	public void rotateZ(float angle){
-	    Quaternion zRot = QuaternionUtil.createFromAxisAngle(right, angle, null);
-	    Quaternion.mul(zRot, orientation, orientation);
-	    //orientation.setZ(orientation.getZ()+zRot.z);
-
-	    QuaternionUtil.rotate(up, zRot, up);
-	    QuaternionUtil.rotate(forward, zRot, forward);
-
-	    up.normalise();
-	    forward.normalise();
-	}
-	
-	public void rotateX(float angle){
-	    
 	}
 	
 	public void move(Vector3f dir, float amount){
@@ -100,7 +65,7 @@ public class Camera extends ACamera{
 	    }
 	}
 	
-	public void update(){
+	public void update(int eye){
 	    // Rotate the scene and translate the world back
 	    QuaternionUtil.toRotationMatrix(orientation, view);
 	    Matrix4f.translate(position.negate(null), view, view);
@@ -110,4 +75,15 @@ public class Camera extends ACamera{
 	    viewBuffer.rewind();
 	}
 
+	@Override
+	public void preUpdate() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void postUpdate() {
+		// TODO Auto-generated method stub
+		
+	}
 }

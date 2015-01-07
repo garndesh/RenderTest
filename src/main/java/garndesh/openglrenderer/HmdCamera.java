@@ -7,7 +7,9 @@ import static com.oculusvr.capi.OvrLibrary.ovrTrackingCaps.ovrTrackingCap_Positi
 
 import java.nio.FloatBuffer;
 
+import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Matrix4f;
+import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
 
 import com.oculusvr.capi.FovPort;
@@ -20,26 +22,35 @@ import com.oculusvr.capi.TextureHeader;
 
 public class HmdCamera extends ACamera {
 
+	private static final String TAG = "HMD_Camera";
 	private Hmd hmd;
-	private float hFov;
-	private float aspect;
+	//private float hFov;
+	//private float aspect;
 	private final FovPort fovPorts[] = new FovPort[2];
-	private final Texture eyeTextures[] = new Texture[2];
-	private final Matrix4f projections[] = new Matrix4f[2];
-	private final Posef poses[] = new Posef[2];
-	private int frameCount;
+	//private final Texture eyeTextures[] = new Texture[2];
+	private final Texture eyeTextures[] =
+			(Texture[])new Texture().toArray(2);
+	//private final Matrix4f projections[] = new Matrix4f[2];
+	private Posef poses[] = new Posef[2];
+	private int frameCount = 0;
 	private OvrVector3f eyeOffsets[] = new OvrVector3f[2];
+	private FloatBuffer[] projBuffers;
 
 	public HmdCamera(float zNear, float zFar) {
-
+		super();
 		Hmd.initialize();
+		
+		eyes = 2;
+		projection = new Matrix4f[2];
 
+		FrameBuffer f = new FrameBuffer();
+		projBuffers = new FloatBuffer[2];
+	    
 		try {
 			Thread.sleep(400);
 		} catch (InterruptedException e) {
 			throw new IllegalStateException(e);
 		}
-
 		hmd = openFirstHmd();
 		if (null == hmd) {
 			throw new IllegalStateException("Unable to initialize HMD");
@@ -49,13 +60,19 @@ public class HmdCamera extends ACamera {
 				| ovrTrackingCap_Position, 0)) {
 			throw new IllegalStateException("Unable to start the sensor");
 		}
-
 		for (int eye = 0; eye < 2; ++eye) {
+			projBuffers[eye] = BufferUtils.createFloatBuffer(16);
+			Log.d(TAG, "setting up eye "+eye);
 			fovPorts[eye] = hmd.DefaultEyeFov[eye];
-			projections[eye] = MatrixUtil
+			Log.d(TAG, "fovPort size: "+fovPorts[eye].size());
+			projection[eye] = MatrixUtil
 					.toMatrix4f(Hmd.getPerspectiveProjection(fovPorts[eye],
 							zNear, zFar, true));
 
+		    // Store the projection matrix in buffer
+		    projection[0].store(projBuffers[eye]);
+		    projBuffers[eye].rewind();
+		    
 			Texture texture = eyeTextures[eye];
 			TextureHeader header = texture.Header;
 			header.API = ovrRenderAPI_OpenGL;
@@ -63,7 +80,36 @@ public class HmdCamera extends ACamera {
 					.getFovTextureSize(eye, fovPorts[eye], 1.0f);
 			header.RenderViewport.Size = header.TextureSize;
 			header.RenderViewport.Pos = new OvrVector2i(0, 0);
+			
 		}
+	}
+
+	@Override 
+	public void preUpdate(){
+		++frameCount;
+		poses = hmd.getEyePoses(frameCount, eyeOffsets);
+		hmd.beginFrame(frameCount);
+	}
+	
+	@Override
+	public void postUpdate(){
+		hmd.endFrame(poses, eyeTextures);
+	}
+	
+	
+	@Override
+	public void update(int eye) {
+		
+		projBuffer = projBuffers[eye];
+		orientation.set(poses[eye].Orientation.x, poses[eye].Orientation.y, poses[eye].Orientation.z, poses[eye].Orientation.w);
+		
+		Matrix4f.translate(position.negate(null), view, view);
+
+	    // Store the view matrix in the buffer
+	    view.store(viewBuffer);
+	    viewBuffer.rewind();
+	    
+
 	}
 
 	private static Hmd openFirstHmd() {
@@ -93,23 +139,14 @@ public class HmdCamera extends ACamera {
 		    }
 		    hmd.endFrame(poses, eyeTextures);
 	}*/
-
-	@Override
-	public void rotateY(float angle) {
-		// TODO Auto-generated method stub
-
+	
+	public void rotateY(float angle){
 	}
-
-	@Override
-	public void rotateZ(float angle) {
-		// TODO Auto-generated method stub
-
+	
+	public void rotateZ(float angle){
 	}
-
-	@Override
-	public void rotateX(float angle) {
-		// TODO Auto-generated method stub
-
+	
+	public void rotateX(float angle){
 	}
 
 	@Override
@@ -122,36 +159,6 @@ public class HmdCamera extends ACamera {
 	public void move(Direction dir, float amount) {
 		// TODO Auto-generated method stub
 
-	}
-
-	@Override
-	public void update() {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void setPosition(Vector3f position) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public FloatBuffer getViewBuffer() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public FloatBuffer getProjectionBuffer() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Vector3f getPosition() {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 }
