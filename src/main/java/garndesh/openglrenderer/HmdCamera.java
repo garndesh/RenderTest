@@ -73,8 +73,8 @@ public class HmdCamera extends ACamera {
 		}
 		return hmd;
 	}
-	
-	public void render(RenderScene scene){
+	//should not be in de camera class, move to the renderer
+	/*public void render(RenderScene scene){
 
 		 ++frameCount;
 		    hmd.beginFrame(frameCount);
@@ -89,22 +89,10 @@ public class HmdCamera extends ACamera {
 		      poses[eye].Orientation = pose.Orientation;
 		      poses[eye].Position = pose.Position;
 
-		      view.
-		      mv.push();
-		      {
-		        mv.preTranslate(
-		          MatrixUtil.toVector3f(
-		            poses[eye].Position).mult(-1));
-		        mv.preRotate(
-		            poses[eye].Orientation.
-		        frameBuffers[eye].activate()
-		        renderScene();
-		        frameBuffers[eye].deactivate();
-		      }
-		      mv.pop();
+		      
 		    }
 		    hmd.endFrame(poses, eyeTextures);
-	}
+	}*/
 
 	@Override
 	public void rotateY(float angle) {
