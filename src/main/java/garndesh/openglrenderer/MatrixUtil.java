@@ -1,6 +1,13 @@
 package garndesh.openglrenderer;
 
+import java.nio.FloatBuffer;
+
+import org.lwjgl.util.vector.Matrix3f;
 import org.lwjgl.util.vector.Matrix4f;
+import org.lwjgl.util.vector.Vector3f;
+
+import com.oculusvr.capi.OvrMatrix4f;
+import com.oculusvr.capi.OvrVector3f;
 
 public class MatrixUtil {
 
@@ -66,5 +73,17 @@ public class MatrixUtil {
 	    mat.m33 = 1;
 	        
 	    return mat;
+	}
+
+	public static Vector3f toVector3f(OvrVector3f positionProjection){
+		return new Vector3f(positionProjection.x, positionProjection.y, positionProjection.z);
+	}
+
+	public static Matrix4f toMatrix4f(OvrMatrix4f perspectiveProjection) {
+		Matrix4f m = new Matrix4f();
+		FloatBuffer fb = FloatBuffer.allocate(16);
+		fb.put(perspectiveProjection.M);
+		m.load(fb);
+		return (Matrix4f) m.transpose();
 	}
 }

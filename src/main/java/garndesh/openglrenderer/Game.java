@@ -24,7 +24,7 @@ import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.PixelFormat;
 import org.lwjgl.util.vector.Vector3f;
 
-public class Game {
+public class Game implements RenderScene {
 	private static Game instance;
 	private ShaderProgram shader;
 	private int vaoID, vboID, vboTexID, eboID;
@@ -34,6 +34,8 @@ public class Game {
 	private CubeRenderer cubeRenderer;
 	private ModelBaseTest modelRenderer;
 	private ModelBaseTest modelRenderer2;
+	private boolean locked = false;
+	private int timer = 0;
 
 	/**
 	 * Create a new Game
@@ -71,6 +73,7 @@ public class Game {
 		transform = new Transform();
 
 		Mouse.setGrabbed(true);
+		locked = true;
 		camera = new Camera(67, ((float)Display.getWidth())/((float)Display.getHeight()), 0.1f, 100);
 		camera.setPosition(new Vector3f(0, 0, 0.8f));
 
@@ -134,12 +137,20 @@ public class Game {
 	 */
 	public void update(long elapsedTime) {
 		//transform.rotate(1, 1, 1);
+		if (timer > 0)
+			timer -= elapsedTime;
 		if (Keyboard.isKeyDown(Keyboard.KEY_ESCAPE))
 			Game.end();
-		
+		if(Keyboard.isKeyDown(Keyboard.KEY_E) && timer <= 0){
+			locked = !locked;
+			timer = 100;
+			Mouse.setGrabbed(locked);
+			Mouse.setCursorPosition(Display.getWidth()/2, Display.getHeight()/2);
+		}
 		// Look up
 //		if (Keyboard.isKeyDown(Keyboard.KEY_UP))
 //			camera.rotateZ(1);
+		if(locked)
 			camera.rotateZ((float)0.5*Mouse.getDY());
 		// Look down
 //		if (Keyboard.isKeyDown(Keyboard.KEY_DOWN))
@@ -147,6 +158,7 @@ public class Game {
 		// Turn left
 //		if (Keyboard.isKeyDown(Keyboard.KEY_LEFT))
 //			camera.rotateY(1);
+		if(locked)
 			camera.rotateY((float)-0.5*Mouse.getDX());
 		// Turn right
 		//if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT))
@@ -176,23 +188,24 @@ public class Game {
 	/**
 	 * Render the game
 	 */
+	@Override
 	public void render() {
 		// Clear the screen and depth buffer
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		// Move the entire scene left by one
 		//transform.translate(-1, 0, 0);
 		// Draw an array of cubes
-		for (int x = 0; x < 2; x++) {
+		for (int x = -3; x < 4; x++) {
 			// Move the column of cubes
 			//transform.translate(x, 0, 0);
 			for (int z = 0; z < 5; z++) {
 				// Add some depth for each row
-				transform.translate(x*2-1, 0, -2*z);
+				transform.translate(x*10-5, 0, -10*z);
 				
 				cubeRenderer.RenderCube(transform, shader, camera);
 				
-				transform.translate(0, 4, 0);
-				transform.scale(0.04F, 0.04F, 0.04F);
+				transform.translate(0, 1, 0);
+				transform.scale(0.19F, 0.19F, 0.19F);
 				modelRenderer.renderModel(transform, shader, camera);
 				
 				//transform.rotate(0, 45, 0);
@@ -207,6 +220,11 @@ public class Game {
 	 */
 	public void resized() {
 		glViewport(0, 0, Display.getWidth(), Display.getHeight());
+		if(camera!=null){
+			Vector3f pos = camera.getPosition();
+			camera = new Camera(67, ((float)Display.getWidth())/((float)Display.getHeight()), 0.1f, 100);
+			camera.setPosition(pos);
+		}
 	}
 
 	/**

@@ -205,11 +205,11 @@ public class ModelBaseTest {
 			normals = false;
 			Entry<String, ModelArrays> entry  = (Entry<String, ModelArrays>) iter.next();
 			ModelArrays array = entry.getValue();
-			System.out.println(array.eList.size());
-			System.out.println(vList.size());
+			//System.out.println(array.eList.size());
+			//System.out.println(vList.size());
 	
 			List<String> map = new ArrayList<String>(new LinkedHashSet<String>(array.eList));
-			System.out.println(map.size());
+			//System.out.println(map.size());
 	
 			String[] tmp = map.get(0).split("/");
 			//System.out.println("tex try = "+map.get(0));
@@ -225,7 +225,7 @@ public class ModelBaseTest {
 			for (String i : map) {
 				String[] indecies = i.split("/");
 				short vertex = (short) (Short.valueOf(indecies[0]) - 1);
-				System.out.println(i + " " + indecies.length);
+				//System.out.println(i + " " + indecies.length);
 				vertices.put(vList.get(vertex * 3));
 				vertices.put(vList.get(vertex * 3 + 1));
 				vertices.put(vList.get(vertex * 3 + 2));
@@ -250,7 +250,7 @@ public class ModelBaseTest {
 				// System.out.println(i);
 				short index = (short) map.indexOf(i);
 				elements.put(index);
-				System.out.println(i + " "+map.indexOf(i)+"( "+vertices.get(index*(3+(textured?2:0)+(normals?3:0)))+","+vertices.get(index*(3+(textured?2:0)+(normals?3:0))+1)+","+vertices.get(index*(3+(textured?2:0)+(normals?3:0))+2)+" ) ,"+vertices.get(index*(3+(textured?2:0)+(normals?3:0))+3)+","+vertices.get(index*(3+(textured?2:0)+(normals?3:0))+4));
+				//System.out.println(i + " "+map.indexOf(i)+"( "+vertices.get(index*(3+(textured?2:0)+(normals?3:0)))+","+vertices.get(index*(3+(textured?2:0)+(normals?3:0))+1)+","+vertices.get(index*(3+(textured?2:0)+(normals?3:0))+2)+" ) ,"+vertices.get(index*(3+(textured?2:0)+(normals?3:0))+3)+","+vertices.get(index*(3+(textured?2:0)+(normals?3:0))+4));
 				// System.out.println(i[0]+" ("+tList.get(i[1]*2)+","+(1-tList.get(i[1]*2+1))+")");
 	
 			}

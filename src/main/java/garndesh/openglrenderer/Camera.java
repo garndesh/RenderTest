@@ -12,31 +12,11 @@ import org.lwjgl.util.vector.Vector3f;
  * @author christiaan
  *
  */
-public class Camera {
-	
-	public enum Direction {
-		FORWARD,
-		BACKWARD,
-		LEFT,
-		RIGHT,
-		UP,
-		DOWN
-	}
+public class Camera extends ACamera{
 	
 	public static final Vector3f AXIS_X = new Vector3f(0, 0, -1);
 	public static final Vector3f AXIS_Y = new Vector3f(0, 1, 0);
 	public static final Vector3f AXIS_Z = new Vector3f(1, 0, 0);
-	
-	private Vector3f   position;
-	private Quaternion orientation;
-	
-	// The projection and view matrices
-	private Matrix4f projection;
-	private Matrix4f view;
-
-	// Projection and View matrix buffers
-	private FloatBuffer projBuffer;
-	private FloatBuffer viewBuffer;
 	
 	// Local axes (relative to the Camera)
 	private Vector3f up; 
@@ -46,22 +26,14 @@ public class Camera {
 	
 	public Camera(float fov, float aspect, float zNear, float zFar)
 	{
-	    // Default position is the origin
-	    position    = new Vector3f();
-	    orientation = new Quaternion();
-
+		super();
 	    // Create the default local axes
 	    up      = new Vector3f(AXIS_Y);
 	    forward = new Vector3f(AXIS_X);
 	    right   = new Vector3f(AXIS_Z);
 
-	    // Create projection and view matrices
+	    // Create projection matrice
 	    projection = MatrixUtil.createPerspective(fov, aspect, zNear, zFar);
-	    view       = new Matrix4f();
-
-	    // Create the projection and view matrix buffers
-	    projBuffer = BufferUtils.createFloatBuffer(16);
-	    viewBuffer = BufferUtils.createFloatBuffer(16);
 
 	    // Store the projection matrix in buffer
 	    projection.store(projBuffer);
@@ -138,17 +110,4 @@ public class Camera {
 	    viewBuffer.rewind();
 	}
 
-	public void setPosition(Vector3f position) {
-		// TODO Auto-generated method stub
-		this.position = position;
-	}
-
-	public FloatBuffer getViewBuffer() {
-		return this.viewBuffer;
-	}
-
-	public FloatBuffer getProjectionBuffer() {
-		// TODO Auto-generated method stub
-		return this.projBuffer;
-	}
 }
